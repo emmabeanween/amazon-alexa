@@ -2,12 +2,13 @@
 title: "R Notebook"
 output: html_notebook
 ---
-#goal: 50 lines
+
 
 library(tidytext)
 library(dplyr)
 library(readr)
 
+#read in the data
 
 amazon_alexa <- read_delim("Documents/amazon_alexa.tsv")
 table_ratings <- table(amazon_alexa$rating)
@@ -28,9 +29,9 @@ dfm_matrix <- dfm(review_tokens)
 top_twenty <- topfeatures(dfm_matrix, n = 20)
 #reduce the matrix
 reduced_dfm_matrix <- dfm_trim(dfm_matrix, min_termfreq = 50, min_docfreq = 100)
+
 #we reduce in this manner to around 50 features from thousands, making it easier to make a rating prediction based on fewer features
 
-#reduce the feature number to around 1000
 final_data <- cbind(reduced_dfm_matrix, amazon_alexa$rating)
 final_data <- as.data.frame(final_data)
 final_data <- final_data[final_data]
@@ -58,17 +59,12 @@ testing_two <- final_data_two[inds==2,]
 second_rf <- randomForest(rating ~ ., data=training_two, importance=TRUE, proximity=TRUE)
 predictions_two <- predict(second_rf, testing_two[, -35])
 success_two_rate <- sum(predictions_two == testing_two$rating)/length(testing_two$rating)
-#adding more tokens significantly increased our accuracy rate, from 75 percent to 95 percent. This indicates that around 50 tokens were not enough for the random forest model to accurately predict Amazon Alexa ratings; however around 90-100 tokens allowed our randomForest model to make an accurate prediction. This could be because the algorithm's use of the top 50 tokens was not taking into account words used in lower-star ratings (since there aren't very many)
 
 
-
-
-
-
-
-
-#second: fitting rv model to second reduced, trying best params
-#try using half of the original features
+#adding more features only raises our testing rate slightly. we can only achieve an accuracy rating of around 75-80 percent.
+#it is possible that we cannot get any higher because to some extent, words are only so correlated with the rating - 
+#in example, the word 'love' may appear pretty frequently in both 4 and 5 star reviews, making it difficult for the model
+#to distinguish accurately.
 
 
 
