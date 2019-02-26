@@ -5,7 +5,7 @@ to build a random forest (collection of trees) model which, given just the text 
 predict its rating. (i.e. 4 stars)
 
 
-#link to the dataset:
+# link to the dataset:
 
 https://www.kaggle.com/sid321axn/amazon-alexa-reviews/version/3
 
