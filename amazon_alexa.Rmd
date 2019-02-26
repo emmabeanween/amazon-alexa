@@ -1,0 +1,77 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+#goal: 50 lines
+
+library(tidytext)
+library(dplyr)
+library(readr)
+
+
+amazon_alexa <- read_delim("Documents/amazon_alexa.tsv")
+table_ratings <- table(amazon_alexa$rating)
+table_prop_ratings <- table_ratings/length(amazon_alexa$rating)
+amazon_alexa %>% group_by(rating) %>% summarize(n = n()) %>% ggplot(aes(x = rating, y = n)) + geom_bar(stat = "identity")
+review_tokens <- tokens(amazon_alexa$verified_reviews, remove_punct=TRUE,remove_numbers=TRUE)
+review_tokens <- tokens_select(review_tokens, stopwords(), selection = "remove")
+all_review_tokens <- tokens_select(review_tokens, stopwords(), selection="remove") %>% tolower()
+counts_top_words <- plyr::count(all_review_tokens)
+counts_top_words <- arrange(counts_top_words, desc(counts_top_words$freq))
+counts_top_words <- counts_top_words[1:15,]
+names(counts_top_words) <- c("word", "frequency")
+ggplot(counts_top_words, aes(x= word, y = frequency)) + coord_flip()
+#we can see that 'love' is the top word used, followed by 'echo', 'great', and 'alexa'. 'Music' and 'like' are not far behind.
+#get dfm to create tokens as features
+dfm_matrix <- dfm(review_tokens)
+#topfeatures() gets us the same results for most used words
+top_twenty <- topfeatures(dfm_matrix, n = 20)
+#reduce the matrix
+reduced_dfm_matrix <- dfm_trim(dfm_matrix, min_termfreq = 50, min_docfreq = 100)
+#we reduce in this manner to around 50 features from thousands, making it easier to make a rating prediction based on fewer features
+
+#reduce the feature number to around 1000
+final_data <- cbind(reduced_dfm_matrix, amazon_alexa$rating)
+final_data <- as.data.frame(final_data)
+final_data <- final_data[final_data]
+final_data <- final_data[,-1]
+colnames(final_data)[55] <- "rating"
+final_data$rating <- as.factor(final_data$rating)
+inds <- sample(x = 1:2, size=nrow(final_data), replace=TRUE, prob = c(0.7, 0.3))
+training <- final_data[inds==1,]
+testing <- final_data[inds==2,]
+first_rf <- randomForest(rating ~., data=training, importance=TRUE, proximity=TRUE)
+X_test <- testing[, -55]
+predictions <- predict(first_rf, X_test)
+y_test <- testing$rating
+success_rate <- sum(predictions == y_test)/length(testing$rating)
+success_rate_rounded <- round(success_rate, 2)
+#we get an accuracy score of around 75 percent on our test set data. 
+bigger_dfm_matrix_two <- dfm_trim(dfm_matrix, min_termfreq = 80, min_docfreq = 50 )
+
+final_data_two <- data.frame(cbind(bigger_dfm_matrix_two, amazon_alexa$rating))
+final_data_two <- final_data_two[, -1]
+colnames(final_data_two)[35] <- "rating"
+final_data_two$rating <- as.factor(final_data_two$rating)
+training_two <- final_data_two[inds==1,]
+testing_two <- final_data_two[inds==2,]
+second_rf <- randomForest(rating ~ ., data=training_two, importance=TRUE, proximity=TRUE)
+predictions_two <- predict(second_rf, testing_two[, -35])
+success_two_rate <- sum(predictions_two == testing_two$rating)/length(testing_two$rating)
+#adding more tokens significantly increased our accuracy rate, from 75 percent to 95 percent. This indicates that around 50 tokens were not enough for the random forest model to accurately predict Amazon Alexa ratings; however around 90-100 tokens allowed our randomForest model to make an accurate prediction. This could be because the algorithm's use of the top 50 tokens was not taking into account words used in lower-star ratings (since there aren't very many)
+
+
+
+
+
+
+
+
+#second: fitting rv model to second reduced, trying best params
+#try using half of the original features
+
+
+
+
+
+
