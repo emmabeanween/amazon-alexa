@@ -61,7 +61,7 @@ success_two_rate <- sum(predictions_two == testing_two$rating)/length(testing_tw
 success_two_rounded <- round(success_two_rate, 2)
 success_two_rounded
 
-#adding more features only raises our testing rate slightly.
+#adding more features only raises our testing rate slightly
 
 
 
